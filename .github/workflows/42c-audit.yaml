@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for results upload to Github Code Scanning
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -23,29 +24,20 @@ jobs:
         with:
           # Upload results to Github Code Scanning
           # Set to false if you don't have Github Advanced Security enabled.
-          upload-to-code-scanning: true
+          upload-to-code-scanning: false
           log-level: info
           sarif-report: 42Crunch_AuditReport_${{ github.run_id }}.SARIF
           export-as-pdf: 42Crunch_AuditReport_${{ github.run_id }}.pdf
           audit-reports-dir: ${{ github.workspace }}/reports
       - name: save-sarif-report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 42Crunch_AuditReport_${{ github.run_id }}
           path: 42Crunch_AuditReport_${{ github.run_id }}.SARIF
           if-no-files-found: error
-      - name: save-pdf-report
-        if: always()        
-        uses: actions/upload-artifact@v3
+      - name: Upload results to MSDO
+        uses: microsoft/security-devops-action@v1
+        id: msdo
         with:
-          name: 42Crunch_AuditReport_${{ github.run_id }}
-          path: 42Crunch_AuditReport_${{ github.run_id }}.pdf
-          if-no-files-found: error
-      - name: save-raw-reports
-        if: always()        
-        uses: actions/upload-artifact@v3
-        with:
-          name: 42Crunch_AuditReport_${{ github.run_id }}
-          path: ${{ github.workspace }}/reports
-          if-no-files-found: error    
+          existingFilename: 42Crunch_AuditReport_${{ github.run_id }}.SARIF
